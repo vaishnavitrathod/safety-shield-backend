@@ -1,0 +1,1183 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Digital Safety Shield</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0614;
+    --bg-card: #12092a;
+    --bg-panel: #1a0f35;
+    --accent-purple: #7c3aed;
+    --accent-violet: #9d4edd;
+    --accent-pink: #f72585;
+    --accent-orange: #ff6b35;
+    --accent-red: #ff2d55;
+    --accent-green: #00f5a0;
+    --accent-blue: #4cc9f0;
+    --text-primary: #f0e6ff;
+    --text-muted: #8b7aa8;
+    --border: rgba(124, 58, 237, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(247,37,133,0.08) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M30 0l30 52H0z' fill='none' stroke='rgba(124,58,237,0.04)' stroke-width='0.5'/%3E%3C/svg%3E");
+    user-select: text;
+  }
+  
+
+  /* ── GEMINI OVERLAY ── */
+  #geminiOverlay {
+    position: fixed; z-index: 99999; display: none; flex-direction: column;
+    background: #110d25; border: 1px solid rgba(157,78,221,0.6); border-radius: 16px;
+    min-width: 280px; max-width: 320px; overflow: hidden;
+    box-shadow: 0 8px 40px rgba(124,58,237,0.4), 0 0 0 1px rgba(157,78,221,0.1);
+    animation: overlayPop 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes overlayPop { from { opacity:0; transform:scale(0.88) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .overlay-top { display:flex; align-items:center; gap:8px; padding:10px 14px 8px; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.03); }
+  .overlay-shield { font-size:14px; }
+  .overlay-title { font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.08em; color:var(--accent-violet); flex:1; }
+  .overlay-close { width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,0.06); border:none; cursor:pointer; color:var(--text-muted); font-size:13px; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+  .overlay-close:hover { background:rgba(255,45,85,0.25); color:white; }
+  .overlay-selected-text { padding:8px 14px; font-size:11px; color:var(--text-muted); font-style:italic; border-bottom:1px solid var(--border); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:rgba(124,58,237,0.05); }
+  .overlay-body { padding:10px 14px 12px; }
+  #overlayAnalyzeBtn { width:100%; padding:9px; font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.06em; border:1px solid rgba(157,78,221,0.5); border-radius:10px; background:linear-gradient(135deg,rgba(124,58,237,0.25),rgba(157,78,221,0.15)); color:var(--accent-violet); cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  #overlayAnalyzeBtn:hover { background:linear-gradient(135deg,rgba(124,58,237,0.45),rgba(157,78,221,0.3)); border-color:var(--accent-violet); color:white; }
+  #overlayAnalyzeBtn:disabled { opacity:0.4; cursor:not-allowed; }
+  #overlayLoading { display:none; align-items:center; gap:8px; padding:8px 0 2px; font-size:12px; color:var(--text-muted); }
+  .overlay-spinner { width:14px; height:14px; border:2px solid rgba(157,78,221,0.2); border-top-color:var(--accent-violet); border-radius:50%; animation:spin 0.65s linear infinite; flex-shrink:0; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #overlayResult { display:none; margin-top:10px; border-radius:10px; padding:10px 12px; border:1px solid; animation:fadeUp 0.25s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+  .ov-safe { background:rgba(0,245,160,0.07); border-color:rgba(0,245,160,0.3); }
+  .ov-warning { background:rgba(255,107,53,0.08); border-color:rgba(255,107,53,0.4); }
+  .ov-offensive { background:rgba(255,45,85,0.1); border-color:rgba(255,45,85,0.5); }
+  .ov-verdict-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .ov-verdict-icon { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
+  .vi-safe { background:#00f5a0; color:#0a0614; }
+  .vi-warning { background:#ff6b35; }
+  .vi-offensive { background:#ff2d55; }
+  .ov-verdict-label { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.04em; }
+  .vl-safe { color:var(--accent-green); } .vl-warning { color:var(--accent-orange); } .vl-offensive { color:var(--accent-red); }
+  .ov-summary { font-size:12px; color:var(--text-muted); line-height:1.55; margin-bottom:8px; }
+  .ov-sev-row { display:flex; align-items:center; gap:8px; }
+  .ov-sev-label { font-size:10px; color:var(--text-muted); width:50px; }
+  .ov-sev-bg { flex:1; height:4px; border-radius:100px; background:rgba(255,255,255,0.08); overflow:hidden; }
+  .ov-sev-fill { height:100%; border-radius:100px; transition:width 0.5s ease; }
+  .sf-low { background:linear-gradient(90deg,#00f5a0,#4cc9f0); }
+  .sf-mid { background:linear-gradient(90deg,#f9c74f,#ff6b35); }
+  .sf-high { background:linear-gradient(90deg,#ff6b35,#ff2d55); }
+  .ov-sev-num { font-size:11px; color:var(--text-muted); width:28px; text-align:right; font-family:'Rajdhani',sans-serif; font-weight:700; }
+  .ov-cats { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .ov-cat { font-size:10px; padding:2px 8px; border-radius:100px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-muted); font-weight:600; letter-spacing:0.03em; }
+  .ov-trigger-row { display:flex; gap:6px; margin-top:10px; }
+  .ov-trigger-btn { flex:1; padding:7px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text-muted); cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.05em; display:flex; align-items:center; justify-content:center; gap:5px; transition:all 0.2s; }
+  .ov-trigger-btn.danger:hover { background:rgba(255,45,85,0.2); border-color:var(--accent-red); color:var(--accent-red); }
+  .ov-trigger-btn.safe:hover { background:rgba(0,245,160,0.12); border-color:var(--accent-green); color:var(--accent-green); }
+
+  /* ── SCAN TOOLTIP ── */
+  #scanTip { position:fixed; z-index:99998; display:none; background:#1a0f35; border:1px solid rgba(157,78,221,0.4); border-radius:8px; padding:5px 10px; font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; color:var(--accent-violet); letter-spacing:0.05em; cursor:pointer; white-space:nowrap; animation:overlayPop 0.15s ease; box-shadow:0 4px 20px rgba(124,58,237,0.3); pointer-events:auto; }
+  #scanTip:hover { background:rgba(124,58,237,0.3); }
+  #scanTip::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border:6px solid transparent; border-bottom:none; border-top-color:rgba(157,78,221,0.4); }
+
+  /* ── LAYOUT ── */
+  .app-wrapper { display:flex; gap:20px; max-width:1100px; width:100%; align-items:flex-start; }
+
+  .phone-mock { width:300px; flex-shrink:0; background:#0d0820; border-radius:40px; border:2px solid rgba(124,58,237,0.4); box-shadow:0 0 60px rgba(124,58,237,0.2),inset 0 1px 0 rgba(255,255,255,0.05); overflow:hidden; position:relative; }
+  .phone-statusbar { background:#0d0820; padding:12px 20px 6px; display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:600; }
+  .phone-header { background:#110d25; padding:10px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+  .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent-violet),var(--accent-pink)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+  .contact-info .name { font-size:14px; font-weight:600; }
+  .contact-info .status { font-size:11px; color:var(--accent-green); }
+  .header-actions { margin-left:auto; display:flex; gap:12px; color:var(--text-muted); cursor:pointer; }
+
+  .chat-area { background:#0d0820; padding:16px; min-height:220px; display:flex; flex-direction:column; gap:10px; }
+  .date-label { text-align:center; font-size:11px; color:var(--text-muted); }
+  .msg { max-width:75%; padding:9px 13px; border-radius:18px; font-size:13px; line-height:1.4; }
+  .msg.incoming { background:#1e1440; border:1px solid var(--border); align-self:flex-start; border-bottom-left-radius:4px; }
+  .msg.outgoing { background:linear-gradient(135deg,var(--accent-purple),var(--accent-violet)); align-self:flex-end; border-bottom-right-radius:4px; }
+  .msg-time { font-size:9px; color:rgba(255,255,255,0.4); margin-top:3px; text-align:right; }
+
+  .threat-alert { background:linear-gradient(135deg,#1a0535,#2d0a4e); border:1px solid rgba(247,37,133,0.5); border-radius:16px; margin:8px; padding:14px; opacity:0; transform:translateY(20px); transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1); box-shadow:0 0 30px rgba(255,45,85,0.2); }
+  .threat-alert.visible { opacity:1; transform:translateY(0); }
+  .alert-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:11px; color:var(--text-muted); font-weight:600; letter-spacing:0.05em; }
+  .threat-title { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; color:var(--accent-orange); display:flex; align-items:center; gap:6px; }
+  .threat-details { display:flex; align-items:center; gap:12px; margin:10px 0; }
+  .threat-type { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:var(--text-muted); text-align:center; }
+  .threat-type-icon { font-size:22px; }
+  .fake-score { margin-left:auto; display:flex; flex-direction:column; align-items:center; }
+  .score-label { font-size:10px; color:var(--text-muted); margin-bottom:4px; }
+  .score-ring { width:60px; height:60px; position:relative; }
+  .score-ring svg { transform:rotate(-90deg); }
+  .score-ring .track { fill:none; stroke:rgba(255,255,255,0.1); stroke-width:6; }
+  .score-ring .fill { fill:none; stroke:url(#scoreGrad); stroke-width:6; stroke-linecap:round; stroke-dasharray:157; stroke-dashoffset:157; transition:stroke-dashoffset 1.5s ease; }
+  .score-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; color:var(--accent-orange); }
+  .threat-level-bar { background:linear-gradient(90deg,#ff2d55,#ff6b35); border-radius:8px; padding:8px 14px; text-align:center; font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.1em; color:white; box-shadow:0 4px 15px rgba(255,45,85,0.4); animation:pulse-threat 2s ease-in-out infinite; }
+  @keyframes pulse-threat { 0%,100%{box-shadow:0 4px 15px rgba(255,45,85,0.4);} 50%{box-shadow:0 4px 30px rgba(255,45,85,0.7);} }
+  .action-label { font-size:11px; color:var(--text-muted); text-align:center; margin:8px 0 6px; }
+  .action-btns { display:flex; gap:6px; }
+  .action-btn { flex:1; background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:10px; padding:8px 4px; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; color:var(--text-primary); cursor:pointer; transition:all 0.2s; font-family:'Exo 2',sans-serif; }
+  .action-btn:hover { background:rgba(124,58,237,0.3); border-color:var(--accent-violet); }
+  .action-btn span { font-size:16px; }
+
+  .unsafe-warning { text-align:center; font-size:10px; color:var(--text-muted); padding:6px; display:flex; align-items:center; justify-content:center; gap:4px; }
+
+  /* ── SIMULATION TOGGLE ── */
+  .sim-toggle-bar { display:flex; align-items:center; justify-content:space-between; padding:6px 14px; background:rgba(124,58,237,0.08); border-top:1px solid var(--border); gap:8px; }
+  .sim-label { font-size:10px; color:var(--text-muted); font-weight:700; letter-spacing:0.06em; }
+  .sim-badge { font-size:9px; padding:2px 8px; border-radius:100px; font-weight:700; letter-spacing:0.05em; }
+  .sim-badge.off { background:rgba(255,255,255,0.06); color:var(--text-muted); border:1px solid var(--border); }
+  .sim-badge.on  { background:rgba(157,78,221,0.2); color:var(--accent-violet); border:1px solid rgba(157,78,221,0.5); }
+  .toggle-switch { position:relative; width:36px; height:20px; cursor:pointer; flex-shrink:0; }
+  .toggle-switch input { opacity:0; width:0; height:0; }
+  .toggle-track { position:absolute; inset:0; border-radius:100px; background:rgba(255,255,255,0.1); border:1px solid var(--border); transition:background 0.2s; }
+  .toggle-switch input:checked ~ .toggle-track { background:rgba(124,58,237,0.6); border-color:var(--accent-violet); }
+  .toggle-knob { position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--text-muted); transition:transform 0.2s, background 0.2s; }
+  .toggle-switch input:checked ~ .toggle-knob { transform:translateX(16px); background:white; }
+
+  /* ── INPUT BAR ── */
+  .input-bar { background:#110d25; padding:10px 12px; display:flex; align-items:center; gap:8px; border-top:1px solid var(--border); }
+  .input-bar input { flex:1; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:20px; padding:8px 14px; color:var(--text-primary); font-family:'Exo 2',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s; }
+  .input-bar input:focus { border-color:var(--accent-violet); }
+  .input-bar input.danger { border-color:var(--accent-red); background:rgba(255,45,85,0.08); }
+  .input-bar input::placeholder { color:var(--text-muted); }
+  @keyframes safe-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,245,160,0)} 50%{box-shadow:0 0 0 4px rgba(0,245,160,0.25)} }
+  .input-bar input.safe-pulse { border-color:rgba(0,245,160,0.5)!important; animation:safe-pulse 2s ease-in-out infinite; }
+  .send-btn { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent-violet),var(--accent-pink)); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:transform 0.2s; flex-shrink:0; }
+  .send-btn:hover { transform:scale(1.1); }
+  .icon-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:18px; transition:color 0.2s; }
+  .icon-btn:hover { color:var(--accent-violet); }
+
+  /* ── DASHBOARD ── */
+  .dashboard { flex:1; background:var(--bg-card); border-radius:24px; border:1px solid var(--border); overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .dash-header { background:var(--bg-panel); padding:18px 20px 0; border-bottom:1px solid var(--border); }
+  .dash-title-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .dash-title { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; letter-spacing:0.03em; }
+  .dash-settings { color:var(--text-muted); cursor:pointer; font-size:18px; }
+  .dash-tabs { display:flex; gap:0; }
+  .tab { padding:8px 16px; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; }
+  .tab.active { color:var(--text-primary); border-bottom-color:var(--accent-violet); }
+  .dash-body { padding:16px; }
+
+  /* ── PLATFORM BAR ── */
+  .platform-bar { display:flex; align-items:center; gap:8px; padding:6px 0 10px; }
+  .platform-label { font-size:9px; color:var(--text-muted); letter-spacing:0.08em; font-weight:700; margin-right:4px; }
+  .platform-icon { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; border:1px solid var(--border); background:rgba(255,255,255,0.05); cursor:pointer; transition:all 0.2s; position:relative; }
+  .platform-icon:hover { background:rgba(124,58,237,0.2); border-color:var(--accent-violet); transform:scale(1.1); }
+  .platform-icon .shield-dot { position:absolute; top:-3px; right:-3px; width:8px; height:8px; border-radius:50%; background:var(--accent-green); border:1px solid var(--bg-deep); }
+
+  /* ── CHART ── */
+  .chart-section { margin-bottom:16px; }
+  .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .chart-title { font-size:13px; font-weight:600; }
+  .chart-badge { background:rgba(255,107,53,0.15); border:1px solid var(--accent-orange); border-radius:8px; padding:3px 10px; font-size:11px; color:var(--accent-orange); font-weight:700; display:flex; flex-direction:column; align-items:flex-end; line-height:1.2; }
+  .chart-badge small { font-size:9px; color:var(--text-muted); font-weight:400; }
+  .chart-wrap { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:14px; padding:12px; position:relative; }
+  canvas#riskChart { width:100%!important; height:120px!important; }
+  .chart-legend { display:flex; gap:14px; margin-top:8px; justify-content:center; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); }
+  .legend-dot { width:8px; height:8px; border-radius:50%; }
+
+  /* ── STATS ── */
+  .stats-row { display:flex; gap:10px; margin-bottom:16px; }
+  .stat-card { flex:1; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:12px; transition:all 0.3s; }
+  .stat-card.highlight { border-color:rgba(255,45,85,0.5); background:rgba(255,45,85,0.08); }
+  .stat-label { font-size:10px; color:var(--text-muted); margin-bottom:6px; font-weight:600; letter-spacing:0.04em; }
+  .stat-val { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; display:flex; align-items:center; gap:6px; }
+  .stat-val .icon { font-size:16px; }
+  .stat-card.highlight .stat-val { color:var(--accent-red); }
+
+  /* ── PROFILE PANEL ── */
+  .profile-panel { background:var(--bg-panel); border:1px solid var(--border); border-radius:16px; padding:16px; opacity:0; transform:translateX(20px); transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .profile-panel.visible { opacity:1; transform:translateX(0); }
+  .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .panel-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; }
+  .close-btn { width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.08); border:none; cursor:pointer; color:var(--text-muted); font-size:12px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+  .close-btn:hover { background:rgba(255,45,85,0.3); color:white; }
+  .profile-info { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .profile-avatar { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .profile-name { font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; }
+  .profile-meta { font-size:11px; color:var(--text-muted); }
+  .profile-score { margin-left:auto; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .score-big { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--accent-orange); }
+  .behaviors { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .behavior-item { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12px; transform:translateX(-10px); opacity:0; transition:all 0.4s ease; }
+  .behavior-item.show { transform:translateX(0); opacity:1; }
+  .behavior-icon { font-size:14px; }
+  .threat-level-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; font-weight:700; }
+  .threat-level-row span { letter-spacing:0.05em; color:var(--text-muted); }
+  .level-badge { color:var(--accent-red); font-family:'Rajdhani',sans-serif; font-size:15px; letter-spacing:0.1em; }
+  .rec-label { font-size:10px; color:var(--text-muted); margin-bottom:8px; letter-spacing:0.05em; }
+  .panel-actions { display:flex; gap:8px; }
+  .panel-btn { flex:1; padding:9px; border-radius:8px; border:none; cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; letter-spacing:0.05em; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; }
+  .panel-btn.block { background:rgba(255,255,255,0.08); border:1px solid var(--border); color:var(--text-primary); }
+  .panel-btn.block:hover { background:rgba(255,45,85,0.2); border-color:var(--accent-red); }
+  .panel-btn.report { background:linear-gradient(135deg,var(--accent-orange),var(--accent-red)); color:white; }
+  .panel-btn.report:hover { transform:scale(1.02); box-shadow:0 4px 15px rgba(255,107,53,0.4); }
+  .panel-unsafe { text-align:center; font-size:10px; color:var(--text-muted); margin-top:10px; display:flex; align-items:center; justify-content:center; gap:4px; }
+  .safe-indicator { text-align:center; padding:20px; color:var(--accent-green); font-size:13px; opacity:0.6; }
+
+  /* ── FAKE PROFILES LIST ── */
+  .fp-item { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:10px 12px; cursor:pointer; transition:all 0.2s; margin-bottom:8px; }
+  .fp-item:hover { background:rgba(124,58,237,0.12); border-color:rgba(157,78,221,0.5); }
+  .fp-avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .fp-info { flex:1; }
+  .fp-name { font-size:13px; font-weight:700; }
+  .fp-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .fp-score { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:800; }
+
+  /* ── INTEL MODAL ── */
+  #intelModal { display:none; position:fixed; inset:0; z-index:888888; background:rgba(10,6,20,0.88); align-items:center; justify-content:center; }
+  .intel-box { background:linear-gradient(160deg,#12092a,#1a0f35); border:1px solid rgba(157,78,221,0.5); border-radius:20px; padding:24px; max-width:340px; width:90%; box-shadow:0 20px 60px rgba(124,58,237,0.3); animation:overlayPop 0.2s ease; }
+  .intel-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .intel-avatar { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; background:rgba(255,255,255,0.08); border:2px solid var(--border); }
+  .intel-title { font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:800; }
+  .intel-sub { font-size:11px; color:var(--text-muted); }
+  .intel-row { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:6px; font-size:12px; }
+  .intel-icon { font-size:14px; flex-shrink:0; margin-top:1px; }
+  .intel-text { color:var(--text-primary); line-height:1.4; }
+  .intel-score-row { display:flex; align-items:center; gap:10px; margin:14px 0 16px; }
+  .intel-score-label { font-size:11px; color:var(--text-muted); }
+  .intel-score-val { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:800; color:var(--accent-orange); margin-left:auto; }
+  .intel-close-btn { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text-muted); cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; transition:all 0.2s; }
+  .intel-close-btn:hover { background:rgba(124,58,237,0.2); color:white; }
+
+  /* ── WHY FLAGGED ── */
+  .why-flagged-btn { display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--accent-blue); cursor:pointer; background:rgba(76,201,240,0.08); border:1px solid rgba(76,201,240,0.25); border-radius:100px; padding:3px 10px; margin-top:6px; transition:all 0.2s; font-weight:600; }
+  .why-flagged-btn:hover { background:rgba(76,201,240,0.18); }
+  #whyModal { display:none; position:fixed; inset:0; z-index:777777; background:rgba(10,6,20,0.88); align-items:center; justify-content:center; }
+  .why-box { background:linear-gradient(160deg,#12092a,#0d0820); border:1px solid rgba(76,201,240,0.4); border-radius:20px; padding:24px; max-width:320px; width:90%; box-shadow:0 20px 60px rgba(76,201,240,0.15); animation:overlayPop 0.2s ease; }
+  .why-title { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:800; color:var(--accent-blue); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .why-tactic { font-size:12px; font-weight:700; color:var(--accent-orange); margin-bottom:6px; letter-spacing:0.04em; }
+  .why-explain { font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; }
+  .why-tip { font-size:11px; background:rgba(0,245,160,0.07); border:1px solid rgba(0,245,160,0.25); border-radius:8px; padding:8px 10px; color:var(--accent-green); line-height:1.5; margin-bottom:14px; }
+
+  /* ── MISC ── */
+  @keyframes scanline { 0%{top:-10%;opacity:0.8;} 100%{top:110%;opacity:0;} }
+  .scan-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent-violet),transparent); pointer-events:none; animation:scanline 2s ease-in-out; top:0; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-4px);} 40%{transform:translateX(4px);} 60%{transform:translateX(-3px);} 80%{transform:translateX(3px);} }
+  .shaking { animation:shake 0.4s ease; }
+
+  .dash-input-bar { background:var(--bg-panel); border-top:1px solid var(--border); padding:10px 16px; display:flex; align-items:center; gap:10px; }
+  .dash-input-bar input { flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:20px; padding:8px 16px; color:var(--text-primary); font-family:'Exo 2',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s; }
+  .dash-input-bar input:focus { border-color:var(--accent-violet); }
+  .dash-input-bar input::placeholder { color:var(--text-muted); }
+  .mic-btn { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent-violet),var(--accent-pink)); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+
+  .detection-badge { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px); background:linear-gradient(135deg,#2d0a4e,#1a0535); border:1px solid var(--accent-red); border-radius:12px; padding:10px 20px; font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; color:var(--accent-red); letter-spacing:0.08em; box-shadow:0 8px 30px rgba(255,45,85,0.3); transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index:999; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .detection-badge.show { transform:translateX(-50%) translateY(0); }
+
+  .overlay-hint { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(26,15,53,0.92); border:1px solid rgba(157,78,221,0.3); border-radius:100px; padding:8px 18px; font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; pointer-events:none; z-index:100; animation:hintFade 4s ease forwards; }
+  @keyframes hintFade { 0%,70%{opacity:1} 100%{opacity:0} }
+
+  /* ── MOBILE ── */
+  @media (max-width:720px) {
+    .app-wrapper { flex-direction:column; align-items:center; }
+    .phone-mock { width:100%; max-width:380px; border-radius:24px; }
+    .dashboard { width:100%; }
+    .dash-input-bar { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="scanTip">🛡️ Scan with AI</div>
+
+<div id="geminiOverlay">
+  <div class="overlay-top">
+    <span class="overlay-shield">🛡️</span>
+    <span class="overlay-title">AI SAFETY SCANNER</span>
+    <button class="overlay-close" onclick="closeOverlay()">✕</button>
+  </div>
+  <div class="overlay-selected-text" id="overlaySelectedText"></div>
+  <div class="overlay-body">
+    <button id="overlayAnalyzeBtn" onclick="runOverlayAnalysis()"><span>⚡</span> ANALYZE WITH AI</button>
+    <div id="overlayLoading"><div class="overlay-spinner"></div>Scanning for threats...</div>
+    <div id="overlayResult">
+      <div class="ov-verdict-row">
+        <div class="ov-verdict-icon" id="ovIcon"></div>
+        <span class="ov-verdict-label" id="ovLabel"></span>
+      </div>
+      <div class="ov-summary" id="ovSummary"></div>
+      <div class="ov-sev-row">
+        <span class="ov-sev-label">Severity</span>
+        <div class="ov-sev-bg"><div class="ov-sev-fill" id="ovSevFill"></div></div>
+        <span class="ov-sev-num" id="ovSevNum"></span>
+      </div>
+      <div class="ov-cats" id="ovCats"></div>
+      <div class="ov-trigger-row" id="ovTriggerRow" style="display:none">
+        <button class="ov-trigger-btn danger" onclick="triggerFromOverlay()">⚠️ TRIGGER ALERT</button>
+        <button class="ov-trigger-btn safe" onclick="closeOverlay()">✓ DISMISS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detection-badge" id="detectionBadge">⚠️ THREAT DETECTED — MANIPULATIVE CONTENT</div>
+
+<!-- UNIFIED INTEL MODAL -->
+<div id="intelModal" style="display:none;position:fixed;inset:0;z-index:888888;background:rgba(10,6,20,0.88);align-items:center;justify-content:center;">
+  <div class="intel-box">
+    <div class="intel-header">
+      <div class="intel-avatar" id="intelAvatar">👤</div>
+      <div><div class="intel-title" id="intelName"></div><div class="intel-sub">🔍 Unified Intelligence Report</div></div>
+    </div>
+    <div id="intelRows"></div>
+    <div class="intel-score-row">
+      <span class="intel-score-label">Composite Fake Score</span>
+      <span class="intel-score-val" id="intelScore"></span>
+    </div>
+    <button class="intel-close-btn" onclick="document.getElementById('intelModal').style.display='none'">✕ CLOSE</button>
+  </div>
+</div>
+
+<!-- WHY FLAGGED MODAL -->
+<div id="whyModal" style="display:none;position:fixed;inset:0;z-index:777777;background:rgba(10,6,20,0.88);align-items:center;justify-content:center;">
+  <div class="why-box">
+    <div class="why-title">💡 Why Was This Flagged?</div>
+    <div class="why-tactic" id="whyTactic"></div>
+    <div class="why-explain" id="whyExplain"></div>
+    <div class="why-tip" id="whyTip"></div>
+    <button class="intel-close-btn" onclick="document.getElementById('whyModal').style.display='none'">✕ GOT IT</button>
+  </div>
+</div>
+
+<!-- EMERGENCY MODAL -->
+<div id="emergencyModal" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(10,6,20,0.92);align-items:center;justify-content:center;flex-direction:column;animation:fadeUp 0.3s ease;">
+  <div style="background:linear-gradient(160deg,#1a0535,#2d0a1a);border:2px solid #ff2d55;border-radius:24px;padding:32px 28px;max-width:320px;width:90%;text-align:center;box-shadow:0 0 60px rgba(255,45,85,0.5);">
+    <div style="font-size:48px;margin-bottom:10px;animation:pulse-threat 1.2s infinite;">🆘</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;color:#ff2d55;letter-spacing:0.08em;margin-bottom:6px;">THREAT DETECTED</div>
+    <div id="emergencyThreatLabel" style="font-size:13px;color:#f0e6ff;margin-bottom:18px;line-height:1.5;"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+      <button onclick="makeEmergencyCall('police')" style="padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff2d55,#c0392b);color:white;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;letter-spacing:0.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(255,45,85,0.4);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">📞 CALL POLICE — 100</button>
+      <button onclick="makeEmergencyCall('women')" style="padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#f72585,#7c3aed);color:white;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;letter-spacing:0.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(247,37,133,0.4);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">🛡️ WOMEN HELPLINE — 1091</button>
+      <button onclick="makeEmergencyCall('ambulance')" style="padding:12px;border-radius:12px;border:1px solid rgba(255,107,53,0.5);background:rgba(255,107,53,0.12);color:#ff6b35;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">🚑 AMBULANCE — 108</button>
+    </div>
+    <div id="autoCallBar" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;color:#8b7aa8;margin-bottom:6px;letter-spacing:0.04em;">AUTO-CALLING POLICE IN</div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:100px;height:6px;overflow:hidden;">
+        <div id="autoCallFill" style="height:100%;background:linear-gradient(90deg,#ff2d55,#ff6b35);border-radius:100px;width:100%;"></div>
+      </div>
+      <div id="autoCallCount" style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#ff2d55;margin-top:4px;">10</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="startAutoCall()" id="autoCallBtn" style="flex:1;padding:9px;border-radius:10px;border:1px solid rgba(255,45,85,0.4);background:rgba(255,45,85,0.1);color:#ff2d55;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">⏱ AUTO CALL</button>
+      <button onclick="closeEmergencyModal()" style="flex:1;padding:9px;border-radius:10px;border:1px solid rgba(139,122,168,0.3);background:rgba(255,255,255,0.04);color:#8b7aa8;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">✕ DISMISS</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALL SCREEN -->
+<div id="callScreen" style="display:none;position:fixed;inset:0;z-index:9999999;background:linear-gradient(160deg,#0d0820,#1a0535);align-items:center;justify-content:center;flex-direction:column;gap:18px;">
+  <div style="font-size:64px;" id="callEmoji">📞</div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:0.15em;color:#8b7aa8;" id="callStatus">CALLING...</div>
+  <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:800;color:#f0e6ff;" id="callName">POLICE — 100</div>
+  <div style="font-size:13px;color:#8b7aa8;" id="callTimer">00:00</div>
+  <div style="margin-top:20px;display:flex;gap:28px;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;"><button style="width:56px;height:56px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);font-size:22px;cursor:pointer;">🔇</button><span style="font-size:10px;color:#8b7aa8;">Mute</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;"><button onclick="endCall()" style="width:64px;height:64px;border-radius:50%;border:none;background:#ff2d55;font-size:24px;cursor:pointer;box-shadow:0 0 20px rgba(255,45,85,0.5);">📵</button><span style="font-size:10px;color:#8b7aa8;">End</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;"><button style="width:56px;height:56px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);font-size:22px;cursor:pointer;">🔊</button><span style="font-size:10px;color:#8b7aa8;">Speaker</span></div>
+  </div>
+</div>
+
+<div class="overlay-hint">✦ Select any text on screen to scan it with AI</div>
+
+<div class="app-wrapper">
+
+  <!-- PHONE -->
+  <div class="phone-mock" id="phoneMock">
+    <div class="phone-statusbar"><span>9:41</span><span>▲▲▲ WiFi 🔋</span></div>
+    <div class="phone-header">
+      <span style="color:var(--text-muted);cursor:pointer">‹</span>
+      <div class="avatar">J</div>
+      <div class="contact-info">
+        <div class="name">John</div>
+        <div class="status">● Online</div>
+      </div>
+      <div class="header-actions"><span>📹</span></div>
+    </div>
+
+    <div class="chat-area" id="chatArea">
+      <div class="date-label">Today</div>
+    </div>
+
+    <div class="threat-alert" id="threatAlert">
+      <div style="position:relative;overflow:hidden;border-radius:12px;">
+        <div class="scan-line" id="scanLine" style="display:none"></div>
+        <div class="alert-header"><span>🛡️</span><span>AI DIGITAL SAFETY SHIELD</span></div>
+        <div class="threat-title">⚠️ Threat Detected</div>
+        <div class="threat-details">
+          <div class="threat-type">
+            <span class="threat-type-icon" id="threatTypeIcon">🧠</span>
+            <div id="threatTypeLabel">Manipulation +</div><div>Exploitation</div>
+            <div style="color:var(--accent-orange);font-size:9px;">intent detected</div>
+          </div>
+          <div class="fake-score">
+            <div class="score-label">Fake Profile<br>Score</div>
+            <div class="score-ring">
+              <svg width="60" height="60">
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ff6b35"/><stop offset="100%" stop-color="#ff2d55"/>
+                  </linearGradient>
+                </defs>
+                <circle class="track" cx="30" cy="30" r="25"/>
+                <circle class="fill" id="scoreCircle" cx="30" cy="30" r="25"/>
+              </svg>
+              <div class="score-text" id="scoreText">0%</div>
+            </div>
+          </div>
+        </div>
+        <div class="threat-level-bar" id="threatLevelBar">⚠ THREAT LEVEL: HIGH</div>
+        <div class="action-label">Action Recommended:</div>
+        <div class="action-btns">
+          <button class="action-btn"><span>🚫</span>Block User</button>
+          <button class="action-btn"><span>🚩</span>Report</button>
+          <button class="action-btn"><span>🛡️</span>Stay Safe</button>
+        </div>
+        <div style="text-align:center">
+          <button class="why-flagged-btn" onclick="showWhyModal()">💡 Why was this flagged?</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="unsafe-warning" id="unsafeWarning" style="display:none">🔒 This conversation may be unsafe</div>
+
+    <div class="sim-toggle-bar">
+      <span class="sim-label">🧠 AI SIMULATION MODE</span>
+      <span class="sim-badge off" id="simBadge">OFF — REGEX</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="simToggle" onchange="onSimToggle(this)">
+        <div class="toggle-track"></div>
+        <div class="toggle-knob"></div>
+      </label>
+    </div>
+    <div style="padding:3px 14px 0;font-size:9px;color:var(--text-muted);letter-spacing:0.04em;background:#110d25;border-top:1px solid var(--border);">▲ TYPE INCOMING TEXT TO SIMULATE &amp; TEST THREAT DETECTION</div>
+    <div class="input-bar">
+      <input type="text" id="phoneInput" placeholder="Simulate incoming message..." />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send as incoming">📨</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <div class="dash-header">
+      <div class="dash-title-row">
+        <div class="dash-title">Digital Safety Dashboard</div>
+        <span class="dash-settings">⚙️</span>
+      </div>
+      <div class="platform-bar">
+        <span class="platform-label">SHIELD ACTIVE ON:</span>
+        <div class="platform-icon" title="WhatsApp">💬<div class="shield-dot"></div></div>
+        <div class="platform-icon" title="Instagram">📸<div class="shield-dot"></div></div>
+        <div class="platform-icon" title="Telegram">✈️<div class="shield-dot"></div></div>
+        <div class="platform-icon" title="SMS">📱<div class="shield-dot"></div></div>
+      </div>
+      <div class="dash-tabs">
+        <div class="tab active" onclick="switchTab('overview',this)">Overview</div>
+        <div class="tab" onclick="switchTab('fakeprofiles',this)">Fake Profiles</div>
+        <div class="tab" onclick="switchTab('trends',this)">Risk Trends</div>
+      </div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- OVERVIEW TAB -->
+      <div id="tab-overview">
+        <div class="chart-section">
+          <div class="chart-header">
+            <div class="chart-title">Risk Level over Days</div>
+            <div class="chart-badge" id="chartBadge"><small>YESTERDAY</small><span>MEDIUM</span></div>
+          </div>
+          <div class="chart-wrap"><canvas id="riskChart"></canvas></div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#4cc9f0"></div>Low</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f9c74f"></div>Medium</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff2d55"></div>High</div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card" id="statThreats"><div class="stat-label">THREATS TODAY</div><div class="stat-val"><span class="icon">⚠️</span><span id="threatCount">14</span></div></div>
+          <div class="stat-card" id="statFake"><div class="stat-label">FAKE PROFILES</div><div class="stat-val"><span class="icon">👤</span><span id="fakeCount">6</span><span style="font-size:14px;color:var(--text-muted)">/18</span></div></div>
+          <div class="stat-card" id="statPerils"><div class="stat-label">PERILS TRIGGERED</div><div class="stat-val"><span class="icon">🚩</span><span id="perilCount">9</span></div></div>
+        </div>
+        <div class="profile-panel" id="profilePanel">
+          <div class="panel-header">
+            <div class="panel-title">👤 Fake Profile Analysis</div>
+            <button class="close-btn" onclick="resetDashboard()">✕</button>
+          </div>
+          <div class="safe-indicator" id="safeIndicator">✓ No threats detected — conversation is safe</div>
+          <div id="profileDetails" style="display:none">
+            <div class="profile-info">
+              <div class="profile-avatar">👤</div>
+              <div><div class="profile-name">John Doe</div><div class="profile-meta">📍 Mumbai &nbsp;🕒 2 hours ago</div></div>
+              <div class="profile-score">
+                <div class="score-label" style="font-size:10px;color:var(--text-muted);text-align:center">Fake Score<br>Detected</div>
+                <div class="score-big" id="profileFakeScore">Fake Score 82%</div>
+              </div>
+            </div>
+            <div class="behaviors">
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.05em;margin-bottom:4px">🔒 FAKE BEHAVIOR DETECTED</div>
+              <div class="behavior-item" id="b1"><span class="behavior-icon">❌</span> Username is generic</div>
+              <div class="behavior-item" id="b2"><span class="behavior-icon">🖼️</span> Photo appears AI-generated</div>
+              <div class="behavior-item" id="b3"><span class="behavior-icon">💬</span> Conversation is manipulative</div>
+            </div>
+            <div class="threat-level-row"><span>THREAT LEVEL:</span><span class="level-badge" id="levelBadge">HIGH</span></div>
+            <div class="rec-label">RECOMMENDED ACTION:</div>
+            <div class="panel-actions">
+              <button class="panel-btn block">🚫 BLOCK USER</button>
+              <button class="panel-btn report">🚩 REPORT</button>
+            </div>
+            <div class="panel-unsafe">🔒 This conversation may be unsafe.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAKE PROFILES TAB -->
+      <div id="tab-fakeprofiles" style="display:none">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;letter-spacing:0.04em;font-weight:700;">👤 FLAGGED ACCOUNTS — Click for Unified Intel</div>
+        <div class="fp-item" onclick="showIntel(0)"><div class="fp-avatar" style="background:rgba(255,45,85,0.15)">👤</div><div class="fp-info"><div class="fp-name">john_doe_2024x</div><div class="fp-sub">📍 Mumbai · Account 2h old · 0 mutual friends</div></div><div class="fp-score" style="color:#ff2d55">82%</div></div>
+        <div class="fp-item" onclick="showIntel(1)"><div class="fp-avatar" style="background:rgba(255,107,53,0.15)">🧑</div><div class="fp-info"><div class="fp-name">real_alex_official</div><div class="fp-sub">📍 Delhi · Account 1d old · IP mismatch</div></div><div class="fp-score" style="color:#ff6b35">74%</div></div>
+        <div class="fp-item" onclick="showIntel(2)"><div class="fp-avatar" style="background:rgba(249,199,79,0.15)">👩</div><div class="fp-info"><div class="fp-name">priya_sharma_99</div><div class="fp-sub">📍 Bengaluru · No post history · VPN detected</div></div><div class="fp-score" style="color:#f9c74f">61%</div></div>
+        <div class="fp-item" onclick="showIntel(3)"><div class="fp-avatar" style="background:rgba(255,45,85,0.15)">🤖</div><div class="fp-info"><div class="fp-name">helpful_stranger_88</div><div class="fp-sub">📍 Unknown · AI-generated profile photo</div></div><div class="fp-score" style="color:#ff2d55">91%</div></div>
+        <div class="fp-item" onclick="showIntel(4)"><div class="fp-avatar" style="background:rgba(255,107,53,0.15)">👦</div><div class="fp-info"><div class="fp-name">mike_sports_fan</div><div class="fp-sub">📍 Chennai · 3 prior flags · Borrowed photos</div></div><div class="fp-score" style="color:#ff6b35">78%</div></div>
+        <div class="fp-item" onclick="showIntel(5)"><div class="fp-avatar" style="background:rgba(249,199,79,0.15)">👩‍💻</div><div class="fp-info"><div class="fp-name">techgirl_connect</div><div class="fp-sub">📍 Hyderabad · Bulk-messaged 47 users today</div></div><div class="fp-score" style="color:#f9c74f">67%</div></div>
+      </div>
+
+      <!-- RISK TRENDS TAB -->
+      <div id="tab-trends" style="display:none">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.04em;font-weight:700;">📊 WEEKLY RISK BREAKDOWN</div>
+        <div class="chart-wrap" style="margin-bottom:12px"><canvas id="riskChart2" style="width:100%!important;height:130px!important"></canvas></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="intel-row"><span class="intel-icon">📈</span><span class="intel-text">Peak risk recorded: <strong style="color:#ff2d55">95%</strong> — grooming pattern detected</span></div>
+          <div class="intel-row"><span class="intel-icon">🕐</span><span class="intel-text">Most active threat window: <strong style="color:#ff6b35">8PM – 11PM</strong></span></div>
+          <div class="intel-row"><span class="intel-icon">🌍</span><span class="intel-text">Top flagged location: <strong style="color:var(--accent-violet)">Mumbai, MH</strong></span></div>
+          <div class="intel-row"><span class="intel-icon">🔁</span><span class="intel-text">Repeat offender rate: <strong style="color:#f9c74f">34%</strong> of flagged users</span></div>
+        </div>
+      </div>
+
+    </div><!-- /dash-body -->
+
+    <div class="dash-input-bar">
+      <button class="icon-btn">➕</button>
+      <input type="text" id="dashInput" placeholder="Message..." />
+      <button class="mic-btn" onclick="sendDashMessage()">🎙️</button>
+    </div>
+  </div>
+
+</div><!-- /app-wrapper -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let threatActive = false;
+let simulationMode = false;
+let currentThreatType = 'manipulation';
+let chartInstance = null;
+let chartInstance2 = null;
+let chartData = [60,55,70,65,72,68,80,75,78,82,90,95];
+const chartLabels = ['Apr 10','','Apr 8','','Oct 6','','','Today','','Oct 8','','Today'];
+let overlaySelectedText = '';
+let lastAIResult = null;
+let messageHistory = [];
+let autoCallTimer = null, autoCallCountdown = 10;
+let callTimerInterval = null, callSeconds = 0;
+
+// ════════════════════════════════════════════
+//  CONFIG — swap FLASK_API to deployed URL when ready
+// ════════════════════════════════════════════
+const FLASK_API ='https://safety-shield-backend.onrender.com/analyze';
+
+// ════════════════════════════════════════════
+//  THREAT PATTERNS  (fast local regex pre-check)
+// ════════════════════════════════════════════
+const THREAT_PATTERNS = [
+  /send\s*(me\s*)?(some\s*)?(pics?|photos?|images?|nudes?|selfies?)/i,
+  /don'?t\s*tell\s*(anyone|nobody|no\s*one)/i,
+  /keep\s*(this|it|us)\s*(secret|between\s*us)/i,
+  /no\s*one\s*(has\s*to\s*)?(needs\s*to\s*)?know/i,
+  /you\s*(can\s*)?trust\s*me/i,
+  /send\s*(me\s*)?(your\s*)?(address|location|number|phone)/i,
+  /where\s*(do\s*)?(you\s*)?(live|stay|are\s*right\s*now)/i,
+  /i\s*(will|'ll|gonna|am\s*going\s*to)\s*(hurt|kill|rape|harm|beat|slap|touch)\s*(you|her)/i,
+  /i\s*know\s*where\s*you\s*(live|work|go\s*to\s*school)/i,
+  /meet\s*(me|up|in\s*person)/i,
+  /how\s*old\s*are\s*you/i,
+  /\b(help\s*me|save\s*me|sos|emergency|in\s*danger|being\s*(followed|attacked|harassed))\b/i,
+];
+
+function detectThreatType(text) {
+  if (/\b(rape|molest|assault|kidnap|abduct|kill|hurt|harm|beat|slap)\b/i.test(text)) return 'physical_threat';
+  if (/\b(sos|help\s*me|save\s*me|in\s*danger|being\s*(followed|attacked))\b/i.test(text)) return 'sos_distress';
+  if (/nudes?|send\s*pics?|selfies?/i.test(text)) return 'grooming';
+  if (/(stalk|follow(ing)?\s*(you|her)|watching\s*(you|her))/i.test(text)) return 'stalking';
+  if (/(address|location|where.*live|home\s*alone)/i.test(text)) return 'location_extraction';
+  if (/(blackmail|i\s*have\s*your\s*(photos?|videos?)|i'?ll\s*(leak|share|post))/i.test(text)) return 'blackmail';
+  return 'manipulation';
+}
+
+function getPatternSeverity(text) {
+  if (/\b(rape|kill|kidnap|abduct|assault)\b/i.test(text)) return 97;
+  if (/\b(sos|help\s*me|in\s*danger)\b/i.test(text)) return 95;
+  if (/(stalk|i\s*know\s*where\s*you|i'?ll\s*leak)/i.test(text)) return 88;
+  if (/nudes?|send\s*pics?|come\s*alone/i.test(text)) return 82;
+  return 74;
+}
+
+// ════════════════════════════════════════════
+//  TAB SWITCHING
+// ════════════════════════════════════════════
+function switchTab(name, el) {
+  ['overview','fakeprofiles','trends'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (name === 'trends' && !chartInstance2) buildChart2();
+}
+
+// ════════════════════════════════════════════
+//  SIMULATION MODE
+// ════════════════════════════════════════════
+function onSimToggle(el) {
+  simulationMode = el.checked;
+  const badge = document.getElementById('simBadge');
+  badge.textContent = simulationMode ? 'ON — AI INTENT' : 'OFF — REGEX';
+  badge.className = 'sim-badge ' + (simulationMode ? 'on' : 'off');
+}
+
+// ════════════════════════════════════════════
+//  FLASK API CALL  (used by both send modes)
+// ════════════════════════════════════════════
+async function callFlaskAPI(message) {
+  const res = await fetch(FLASK_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history: messageHistory.slice(-4) })
+  });
+  return await res.json();
+}
+
+// ════════════════════════════════════════════
+//  GEMINI OVERLAY
+// ════════════════════════════════════════════
+const scanTip = document.getElementById('scanTip');
+const overlay  = document.getElementById('geminiOverlay');
+
+document.addEventListener('mouseup', e => {
+  if (overlay.contains(e.target) || scanTip.contains(e.target)) return;
+  const sel = window.getSelection();
+  const txt = sel ? sel.toString().trim() : '';
+  if (!txt || txt.length < 4) { hideTip(); return; }
+  overlaySelectedText = txt;
+  const rect = sel.getRangeAt(0).getBoundingClientRect();
+  scanTip.style.left = Math.max(8, rect.left + rect.width/2 - 60) + 'px';
+  scanTip.style.top  = Math.max(8, rect.top - 40) + 'px';
+  scanTip.style.display = 'block';
+});
+scanTip.addEventListener('click', () => {
+  const sel = window.getSelection();
+  showOverlay(sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null);
+});
+document.addEventListener('mousedown', e => {
+  if (!overlay.contains(e.target) && !scanTip.contains(e.target)) { hideTip(); closeOverlay(); }
+});
+function hideTip() { scanTip.style.display = 'none'; }
+
+function showOverlay(rect) {
+  hideTip();
+  document.getElementById('overlaySelectedText').textContent = '"' + (overlaySelectedText.length > 45 ? overlaySelectedText.slice(0,45)+'…' : overlaySelectedText) + '"';
+  document.getElementById('overlayResult').style.display = 'none';
+  document.getElementById('overlayLoading').style.display = 'none';
+  document.getElementById('overlayAnalyzeBtn').style.display = 'flex';
+  document.getElementById('overlayAnalyzeBtn').disabled = false;
+  document.getElementById('ovTriggerRow').style.display = 'none';
+  lastAIResult = null;
+  const ow = 300, oh = 180;
+  let left = rect ? rect.left + rect.width/2 - ow/2 : window.innerWidth/2 - ow/2;
+  let top  = rect ? rect.top - oh - 14 + window.scrollY : window.innerHeight/2 - oh/2;
+  if (top < 10) top = rect ? rect.bottom + 14 + window.scrollY : window.innerHeight/2;
+  overlay.style.left = Math.max(8, Math.min(left, window.innerWidth - ow - 8)) + 'px';
+  overlay.style.top  = top + 'px';
+  overlay.style.display = 'flex';
+}
+function closeOverlay() { overlay.style.display = 'none'; }
+
+// Overlay analysis — calls Flask, normalises response
+async function runOverlayAnalysis() {
+  if (!overlaySelectedText) return;
+  document.getElementById('overlayAnalyzeBtn').style.display = 'none';
+  document.getElementById('overlayLoading').style.display = 'flex';
+  document.getElementById('overlayResult').style.display = 'none';
+  try {
+    const data = await callFlaskAPI(overlaySelectedText);
+    // Normalise Flask response to overlay schema
+    const r = {
+      verdict:    data.level === 'HIGH' ? 'offensive' : data.level === 'MEDIUM' ? 'warning' : 'safe',
+      severity:   data.fake_score || 0,
+      summary:    data.reason || 'Analysis complete.',
+      threat_type: data.threat_type || (data.level === 'HIGH' ? 'manipulation' : 'none'),
+      categories: data.categories || [],
+      reasons:    data.reasons || (data.reason ? [data.reason] : []),
+    };
+    lastAIResult = r;
+    showOverlayResult(r);
+  } catch(err) {
+    document.getElementById('overlayLoading').style.display = 'none';
+    document.getElementById('overlayAnalyzeBtn').style.display = 'flex';
+    document.getElementById('overlayAnalyzeBtn').disabled = false;
+    document.getElementById('overlayAnalyzeBtn').textContent = '⚡ RETRY (backend offline)';
+  }
+}
+
+function showOverlayResult(r) {
+  document.getElementById('overlayLoading').style.display = 'none';
+  const isOff = r.verdict === 'offensive', isWarn = r.verdict === 'warning';
+  const result = document.getElementById('overlayResult');
+  result.className = isOff ? 'ov-offensive' : isWarn ? 'ov-warning' : 'ov-safe';
+  const icon = document.getElementById('ovIcon');
+  icon.className = 'ov-verdict-icon ' + (isOff ? 'vi-offensive' : isWarn ? 'vi-warning' : 'vi-safe');
+  icon.textContent = isOff ? '✕' : isWarn ? '!' : '✓';
+  const lbl = document.getElementById('ovLabel');
+  lbl.className = 'ov-verdict-label ' + (isOff ? 'vl-offensive' : isWarn ? 'vl-warning' : 'vl-safe');
+  lbl.textContent = isOff ? 'THREAT DETECTED' : isWarn ? 'SUSPICIOUS' : 'SAFE';
+  document.getElementById('ovSummary').textContent = r.summary;
+  const fill = document.getElementById('ovSevFill');
+  fill.style.width = r.severity + '%';
+  fill.className = 'ov-sev-fill ' + (r.severity < 34 ? 'sf-low' : r.severity < 67 ? 'sf-mid' : 'sf-high');
+  document.getElementById('ovSevNum').textContent = r.severity + '%';
+  const cats = [...(r.categories || [])];
+  if (r.threat_type && r.threat_type !== 'none') cats.unshift(r.threat_type.replace(/_/g,' '));
+  document.getElementById('ovCats').innerHTML = [...new Set(cats)].map(c => `<span class="ov-cat">${c}</span>`).join('');
+  result.style.display = 'block';
+  if (isOff || isWarn) document.getElementById('ovTriggerRow').style.display = 'flex';
+}
+
+function triggerFromOverlay() {
+  closeOverlay();
+  const r = lastAIResult || { severity: 82, threat_type: 'manipulation', reasons: [] };
+  triggerThreat(r.severity, r.threat_type, r.reasons || []);
+}
+
+// ════════════════════════════════════════════
+//  MESSAGES
+// ════════════════════════════════════════════
+function addMsg(text, type) {
+  const area = document.getElementById('chatArea');
+  const msg  = document.createElement('div');
+  msg.className = `msg ${type}`;
+  msg.innerHTML = `${text}<div class="msg-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} ${type==='outgoing'?'✓✓':''}</div>`;
+  msg.style.opacity = '0'; msg.style.transform = 'translateY(8px)';
+  area.appendChild(msg);
+  requestAnimationFrame(() => { msg.style.transition='all 0.3s ease'; msg.style.opacity='1'; msg.style.transform='translateY(0)'; });
+  area.scrollTop = area.scrollHeight;
+  if (type === 'incoming') messageHistory.push({ role:'user', content:text });
+}
+
+// Main send — phone simulator
+async function sendMessage() {
+  const input = document.getElementById('phoneInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  addMsg(text, 'incoming');
+  input.value = '';
+  input.classList.remove('danger','safe-pulse');
+
+  const btn = document.getElementById('sendBtn');
+  btn.textContent = '⏳'; btn.disabled = true;
+
+  try {
+    // ── Always hit Flask backend ──
+    const data = await callFlaskAPI(text);
+    btn.textContent = '📨'; btn.disabled = false;
+
+    const level = data.level || 'LOW';
+    const score = data.fake_score || getPatternSeverity(text);
+    const type  = data.threat_type || detectThreatType(text);
+    const reasons = data.reasons || (data.reason ? [data.reason] : []);
+
+    if (level === 'HIGH' || level === 'MEDIUM') {
+      triggerThreat(score, type, reasons);
+      showEmergencyModal(text, type);
+    } else {
+      // Green safe-pulse feedback
+      input.classList.add('safe-pulse');
+      setTimeout(() => input.classList.remove('safe-pulse'), 4000);
+    }
+  } catch(err) {
+    // Flask offline — fall back to local regex
+    btn.textContent = '📨'; btn.disabled = false;
+    const matched = THREAT_PATTERNS.some(p => p.test(text));
+    if (matched) {
+      const type = detectThreatType(text);
+      triggerThreat(getPatternSeverity(text), type, []);
+      showEmergencyModal(text, type);
+    } else {
+      input.classList.add('safe-pulse');
+      setTimeout(() => input.classList.remove('safe-pulse'), 4000);
+    }
+  }
+}
+
+// Dash input (secondary)
+async function sendDashMessage() {
+  const input = document.getElementById('dashInput');
+  const text = input.value.trim();
+  if (!text) return;
+  addMsg(text, 'incoming');
+  input.value = '';
+  try {
+    const data = await callFlaskAPI(text);
+    if (data.level === 'HIGH' || data.level === 'MEDIUM') {
+      triggerThreat(data.fake_score || 74, data.threat_type || detectThreatType(text), data.reasons || []);
+      showEmergencyModal(text, data.threat_type || detectThreatType(text));
+    }
+  } catch(_) {
+    if (THREAT_PATTERNS.some(p => p.test(text))) {
+      const t = detectThreatType(text);
+      triggerThreat(getPatternSeverity(text), t, []);
+      showEmergencyModal(text, t);
+    }
+  }
+}
+
+// Real-time danger highlight (regex only, non-blocking)
+document.getElementById('phoneInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+document.getElementById('phoneInput').addEventListener('input', e => {
+  const val = e.target.value;
+  e.target.classList.toggle('danger', THREAT_PATTERNS.some(p => p.test(val)));
+});
+document.getElementById('dashInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendDashMessage(); });
+
+// ════════════════════════════════════════════
+//  TRIGGER THREAT  (dynamic reasons + type)
+// ════════════════════════════════════════════
+function triggerThreat(score = 82, type = 'manipulation', reasons = []) {
+  if (threatActive) return;
+  threatActive = true;
+  currentThreatType = type;
+
+  // Shake phone
+  const phone = document.getElementById('phoneMock');
+  phone.classList.add('shaking');
+  setTimeout(() => phone.classList.remove('shaking'), 500);
+
+  // Top badge
+  const badge = document.getElementById('detectionBadge');
+  const typeLabel = type && type !== 'none' ? type.replace(/_/g,' ').toUpperCase() : 'MANIPULATIVE CONTENT';
+  badge.innerHTML = `⚠️ THREAT DETECTED — ${typeLabel}`;
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 3500);
+
+  // Threat alert UI
+  document.getElementById('threatAlert').classList.add('visible');
+  document.getElementById('unsafeWarning').style.display = 'flex';
+  const level = score >= 80 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW';
+  document.getElementById('threatLevelBar').textContent = `⚠ THREAT LEVEL: ${level}`;
+  document.getElementById('levelBadge').textContent = level;
+
+  // Dynamic threat type label in alert card
+  const ICONS = { grooming:'🧒', physical_threat:'⚡', stalking:'👁️', location_extraction:'📍', blackmail:'🔒', sos_distress:'🆘', manipulation:'🧠' };
+  document.getElementById('threatTypeIcon').textContent = ICONS[type] || '🧠';
+  document.getElementById('threatTypeLabel').textContent = type.replace(/_/g,' ');
+
+  // If AI provided reasons, update summary in overlay result area too
+  if (reasons.length > 0) {
+    const sumEl = document.getElementById('ovSummary');
+    if (sumEl) sumEl.textContent = reasons.join(' · ');
+  }
+
+  // Score ring animation
+  setTimeout(() => {
+    document.getElementById('scoreCircle').style.strokeDashoffset = 157 - (score/100)*157;
+    document.getElementById('profileFakeScore').textContent = `Fake Score ${score}%`;
+    let s = 0;
+    const iv = setInterval(() => {
+      s = Math.min(s+2, score);
+      document.getElementById('scoreText').textContent = s + '%';
+      if (s >= score) clearInterval(iv);
+    }, 25);
+  }, 300);
+
+  // Scan line
+  const sl = document.getElementById('scanLine');
+  sl.style.display = 'block';
+  setTimeout(() => sl.style.display = 'none', 2200);
+
+  // Profile panel
+  document.getElementById('profilePanel').classList.add('visible');
+  document.getElementById('safeIndicator').style.display = 'none';
+  document.getElementById('profileDetails').style.display = 'block';
+  ['b1','b2','b3'].forEach((id,i) => setTimeout(() => document.getElementById(id).classList.add('show'), 600+i*200));
+
+  // Chart update
+  chartData = [...chartData.slice(1), Math.min(score+5, 100)];
+  document.getElementById('chartBadge').innerHTML = `<small>TODAY</small><span style="color:#ff2d55">${level}</span>`;
+  buildChart(true);
+
+  // Stats
+  document.getElementById('threatCount').textContent = '15';
+  document.getElementById('fakeCount').textContent = '7';
+  document.getElementById('perilCount').textContent = '10';
+  ['statThreats','statFake','statPerils'].forEach(id => document.getElementById(id).classList.add('highlight'));
+}
+
+function resetDashboard() {
+  threatActive = false;
+  currentThreatType = 'manipulation';
+  document.getElementById('threatAlert').classList.remove('visible');
+  document.getElementById('unsafeWarning').style.display = 'none';
+  document.getElementById('profilePanel').classList.remove('visible');
+  document.getElementById('safeIndicator').style.display = 'block';
+  document.getElementById('profileDetails').style.display = 'none';
+  ['b1','b2','b3'].forEach(id => document.getElementById(id).classList.remove('show'));
+  ['statThreats','statFake','statPerils'].forEach(id => document.getElementById(id).classList.remove('highlight'));
+  document.getElementById('threatCount').textContent = '14';
+  document.getElementById('fakeCount').textContent = '6';
+  document.getElementById('perilCount').textContent = '9';
+  document.getElementById('scoreCircle').style.strokeDashoffset = '157';
+  document.getElementById('scoreText').textContent = '0%';
+  chartData = [60,55,70,65,72,68,80,75,78,82,90,95];
+  document.getElementById('chartBadge').innerHTML = '<small>YESTERDAY</small><span>MEDIUM</span>';
+  buildChart();
+}
+
+// ════════════════════════════════════════════
+//  EMERGENCY MODAL
+// ════════════════════════════════════════════
+const EMERGENCY_LABELS = {
+  physical_threat:    '⚠️ Physical threat language detected. Your safety may be at risk.',
+  sos_distress:       '🆘 Distress signal detected. Do you need emergency help right now?',
+  grooming:           '🛡️ Grooming behaviour detected — someone may be trying to exploit you.',
+  stalking:           '👁️ Stalking or surveillance language detected. You may be in danger.',
+  location_extraction:'📍 Someone is trying to extract your location. Stay safe.',
+  blackmail:          '🔒 Blackmail or coercion language detected. You are not alone.',
+  manipulation:       '⚠️ Manipulative content detected in this conversation.',
+  high:               '⚠️ High-risk threat language detected. Your safety may be at risk.',
+  medium:             '🛡️ Suspicious activity detected in this conversation.',
+};
+
+function showEmergencyModal(text, type) {
+  document.getElementById('emergencyThreatLabel').textContent = EMERGENCY_LABELS[type] || EMERGENCY_LABELS.manipulation;
+  document.getElementById('emergencyModal').style.display = 'flex';
+}
+
+function closeEmergencyModal() {
+  clearAutoCallTimer();
+  document.getElementById('emergencyModal').style.display = 'none';
+  document.getElementById('autoCallBar').style.display = 'none';
+}
+
+function startAutoCall() {
+  document.getElementById('autoCallBtn').style.display = 'none';
+  document.getElementById('autoCallBar').style.display = 'block';
+  autoCallCountdown = 10;
+  document.getElementById('autoCallCount').textContent = autoCallCountdown;
+  const fill = document.getElementById('autoCallFill');
+  fill.style.width = '100%';
+  requestAnimationFrame(() => { fill.style.transition = 'width 10s linear'; fill.style.width = '0%'; });
+  autoCallTimer = setInterval(() => {
+    autoCallCountdown--;
+    document.getElementById('autoCallCount').textContent = autoCallCountdown;
+    if (autoCallCountdown <= 0) { clearAutoCallTimer(); makeEmergencyCall('police'); }
+  }, 1000);
+}
+
+function clearAutoCallTimer() {
+  if (autoCallTimer) { clearInterval(autoCallTimer); autoCallTimer = null; }
+  document.getElementById('autoCallBtn').style.display = '';
+  autoCallCountdown = 10;
+}
+
+const CALL_DETAILS = {
+  police:    { name:'POLICE — 100',          emoji:'🚔', color:'#ff2d55' },
+  women:     { name:'WOMEN HELPLINE — 1091', emoji:'🛡️', color:'#f72585' },
+  ambulance: { name:'AMBULANCE — 108',       emoji:'🚑', color:'#ff6b35' },
+};
+
+function makeEmergencyCall(type) {
+  closeEmergencyModal();
+  const d = CALL_DETAILS[type];
+  document.getElementById('callEmoji').textContent  = d.emoji;
+  document.getElementById('callName').textContent   = d.name;
+  document.getElementById('callName').style.color   = d.color;
+  document.getElementById('callStatus').textContent = 'CALLING...';
+  document.getElementById('callTimer').textContent  = '00:00';
+  document.getElementById('callScreen').style.display = 'flex';
+  callSeconds = 0;
+  setTimeout(() => {
+    document.getElementById('callStatus').textContent = 'CONNECTED';
+    callTimerInterval = setInterval(() => {
+      callSeconds++;
+      const m = String(Math.floor(callSeconds/60)).padStart(2,'0');
+      const s = String(callSeconds%60).padStart(2,'0');
+      document.getElementById('callTimer').textContent = `${m}:${s}`;
+    }, 1000);
+  }, 2000);
+}
+
+function endCall() {
+  if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
+  document.getElementById('callScreen').style.display = 'none';
+}
+
+// ════════════════════════════════════════════
+//  WHY FLAGGED MODAL
+// ════════════════════════════════════════════
+const WHY_DATA = {
+  manipulation:        { tactic:'MANIPULATION TACTIC', explain:'The sender is using psychological pressure to influence your decisions or emotions — guilt-tripping, urgency, or promises that seem too good to be true.', tip:'✅ Trust your instincts. If something feels off, it probably is. Talk to someone you trust.' },
+  grooming:            { tactic:'GROOMING BEHAVIOUR', explain:'An adult is building trust with the intent to exploit. Asking for photos or requesting secrecy are classic early-stage grooming signals.', tip:'✅ Never share photos with someone you met online. You can always say no and tell a trusted adult.' },
+  physical_threat:     { tactic:'PHYSICAL THREAT', explain:'This message contains language implying a risk to your physical safety. Threats — even indirect ones — should always be taken seriously.', tip:'✅ If you feel in immediate danger, call emergency services. Screenshot this conversation.' },
+  stalking:            { tactic:'STALKING / SURVEILLANCE', explain:'The sender appears to be monitoring your movements or location. This is serious and a criminal offence in many regions.', tip:'✅ Do not confirm your location. Block the user and report to platform safety.' },
+  location_extraction: { tactic:'LOCATION EXTRACTION', explain:'This person is attempting to find out where you live or where you are. Sharing your location with strangers online can put you at risk.', tip:'✅ Never share your address, school, or daily routine with someone you only know online.' },
+  blackmail:           { tactic:'BLACKMAIL / COERCION', explain:'The sender is threatening to expose private information unless you comply. This is illegal and you are not at fault.', tip:'✅ Do not pay or comply. Report to police and the platform. Help is available — you are not alone.' },
+  sos_distress:        { tactic:'DISTRESS SIGNAL DETECTED', explain:'This message suggests someone may be in immediate danger or calling for help. Time-sensitive action may be needed.', tip:'✅ If you or someone else is in danger, call emergency services immediately.' },
+};
+
+function showWhyModal() {
+  const info = WHY_DATA[currentThreatType] || WHY_DATA.manipulation;
+  document.getElementById('whyTactic').textContent  = info.tactic;
+  document.getElementById('whyExplain').textContent = info.explain;
+  document.getElementById('whyTip').textContent     = info.tip;
+  document.getElementById('whyModal').style.display = 'flex';
+}
+
+// ════════════════════════════════════════════
+//  FAKE PROFILES — UNIFIED INTEL
+// ════════════════════════════════════════════
+const FAKE_PROFILES = [
+  { name:'john_doe_2024x',      avatar:'👤', score:'82%', color:'#ff2d55', intel:[
+    { icon:'⏱️', text:'Account created just 2 hours ago — newly minted for targeted use.' },
+    { icon:'🌐', text:'IP address registered in Romania but claims to be in Mumbai.' },
+    { icon:'🖼️', text:'Profile photo reverse-image-searched — AI-generated face detected.' },
+    { icon:'💬', text:'Sent 23 messages in this session with escalating personal questions.' },
+    { icon:'🔗', text:'No mutual connections, no post history, no tagged photos.' },
+  ]},
+  { name:'real_alex_official',  avatar:'🧑', score:'74%', color:'#ff6b35', intel:[
+    { icon:'📍', text:'Claims Delhi location but device GPS pings from Kolkata.' },
+    { icon:'🕐', text:'Account created 1 day ago — pattern matches bot-farm activity.' },
+    { icon:'📷', text:'Profile photo belongs to a fitness influencer from Brazil.' },
+    { icon:'🔄', text:'Username "official" suffix — common impersonation tactic.' },
+  ]},
+  { name:'priya_sharma_99',     avatar:'👩', score:'61%', color:'#f9c74f', intel:[
+    { icon:'🌐', text:'VPN detected — masking real IP and physical location.' },
+    { icon:'📭', text:'Zero posts, zero followers, zero following — empty account.' },
+    { icon:'💬', text:'Conversation tone shifts between warm and transactional.' },
+    { icon:'📞', text:'Phone number linked to 3 previously reported accounts.' },
+  ]},
+  { name:'helpful_stranger_88', avatar:'🤖', score:'91%', color:'#ff2d55', intel:[
+    { icon:'🤖', text:'Profile photo scored 97% AI generation likelihood (GAN model).' },
+    { icon:'⚡', text:'Response times consistently under 2 seconds — bot-like behaviour.' },
+    { icon:'🔢', text:'Suffix "88" associated with extremist coding in some contexts.' },
+    { icon:'📧', text:'Email domain linked to a known phishing infrastructure.' },
+    { icon:'🌍', text:'Location unknown — no metadata available in any posts.' },
+  ]},
+  { name:'mike_sports_fan',     avatar:'👦', score:'78%', color:'#ff6b35', intel:[
+    { icon:'🚩', text:'3 prior user reports for harassment on this platform.' },
+    { icon:'🖼️', text:'Photos borrowed from a real Chennai-based athlete\'s account.' },
+    { icon:'💬', text:'Repeatedly asks minors for their age and school name.' },
+    { icon:'🔍', text:'Matches a pattern in our grooming-behaviour classifier.' },
+  ]},
+  { name:'techgirl_connect',    avatar:'👩‍💻', score:'67%', color:'#f9c74f', intel:[
+    { icon:'📨', text:'Bulk-messaged 47 users in the last 6 hours — spam or phishing.' },
+    { icon:'🔗', text:'All messages contain a suspicious shortened URL.' },
+    { icon:'📍', text:'Hyderabad-based account with Tier-2 city IP range.' },
+    { icon:'🕐', text:'Activity only between 2AM–5AM — automated scheduling suspected.' },
+  ]},
+];
+
+function showIntel(idx) {
+  const p = FAKE_PROFILES[idx];
+  document.getElementById('intelAvatar').textContent = p.avatar;
+  document.getElementById('intelName').textContent   = p.name;
+  document.getElementById('intelScore').textContent  = p.score;
+  document.getElementById('intelScore').style.color  = p.color;
+  document.getElementById('intelRows').innerHTML = p.intel.map(r =>
+    `<div class="intel-row"><span class="intel-icon">${r.icon}</span><span class="intel-text">${r.text}</span></div>`
+  ).join('');
+  document.getElementById('intelModal').style.display = 'flex';
+}
+
+// ════════════════════════════════════════════
+//  CHARTS
+// ════════════════════════════════════════════
+function buildChart(highlightLast = false) {
+  const ctx = document.getElementById('riskChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  const colors = chartData.map((v,i) => {
+    if (i === chartData.length-1 && highlightLast) return '#ff2d55';
+    return v>=80?'#ff2d55':v>=65?'#f9c74f':'#4cc9f0';
+  });
+  const gradient = ctx.createLinearGradient(0,0,0,120);
+  gradient.addColorStop(0,'rgba(247,37,133,0.4)');
+  gradient.addColorStop(1,'rgba(247,37,133,0)');
+  chartInstance = new Chart(ctx, {
+    type:'line',
+    data:{ labels:chartLabels, datasets:[{ data:chartData,
+      segment:{ borderColor: c => { const v=chartData[c.p1DataIndex]; return v>=80?'#ff2d55':v>=65?'#f9c74f':'#4cc9f0'; }},
+      pointBackgroundColor:colors,
+      pointRadius:colors.map((c,i) => i===chartData.length-1?6:3),
+      pointHoverRadius:6, backgroundColor:gradient,
+      fill:true, tension:0.4, borderWidth:2,
+    }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{enabled:true} },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b7aa8',font:{size:9}} },
+        y:{ min:0, max:100, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b7aa8',font:{size:9},stepSize:20} }
+      }
+    }
+  });
+}
+
+function buildChart2() {
+  const ctx = document.getElementById('riskChart2').getContext('2d');
+  if (chartInstance2) chartInstance2.destroy();
+  chartInstance2 = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets:[
+        { label:'High',   data:[3,1,4,2,5,8,6], backgroundColor:'rgba(255,45,85,0.7)',  borderRadius:4 },
+        { label:'Medium', data:[5,3,2,6,4,3,5], backgroundColor:'rgba(255,107,53,0.5)', borderRadius:4 },
+        { label:'Low',    data:[2,5,3,4,2,1,2], backgroundColor:'rgba(76,201,240,0.4)', borderRadius:4 },
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#8b7aa8',font:{size:9}}}, tooltip:{enabled:true} },
+      scales:{
+        x:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b7aa8',font:{size:9}} },
+        y:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b7aa8',font:{size:9}} }
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+window.onload = function() {
+  buildChart();
+  setTimeout(() => addMsg("Hi, can I ask you something?", 'incoming'), 400);
+  setTimeout(() => addMsg("Sure, go ahead!", 'outgoing'), 900);
+};
+</script>
+</body>
+</html>
