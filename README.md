@@ -16,7 +16,10 @@
 
 ---
 ## 📸 Demo Preview
-![App Screenshot](your-image-link)
+
+![AI Digital Safety Shield Demo](https://raw.githubusercontent.com/vaishnavitrathod/safety-shield-backend/addaf38c8295b3ce73a1ed4c2f0f983981a93c53/demo.png)
+
+> Real-time threat detection dashboard showing grooming detection, risk scoring, and emergency response options.
 
 ## 💡 Idea Title
 **AI Digital Safety Shield** — Real-time threat detection and emergency response for women's online safety.
