@@ -15,6 +15,8 @@
 | ⚙️ Backend API | https://safety-shield-backend.onrender.com |
 
 ---
+## 📸 Demo Preview
+![App Screenshot](your-image-link)
 
 ## 💡 Idea Title
 **AI Digital Safety Shield** — Real-time threat detection and emergency response for women's online safety.
@@ -62,8 +64,8 @@ Emergency Modal → One-tap call to Police/Helpline/Ambulance
 ```
 
 ### Database Used
-- No database required — stateless API design
-- Conversation history passed per-request for context-aware analysis
+- Stateless architecture for fast, scalable threat analysis
+- No persistent storage → ensures user privacy
 
 ### Third-Party Integrations
 | Service | Purpose |
@@ -117,7 +119,8 @@ python app.py          # starts on http://localhost:5000
 ---
 
 ## 👥 Team
-**Zenith Crew** — EliteHer Hackathon 2026
-**Members** - Vaishnavi T(Team leader),
-              Fiona Diya D'souza, and 
-              Nitya D Naik
+**Zenith Crew — EliteHer Hackathon 2026**
+
+- Vaishnavi T (Team Lead)
+- Fiona Diya D'Souza
+- Nitya D Naik
